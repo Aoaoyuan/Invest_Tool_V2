@@ -18,3 +18,9 @@ _charts/
 # OS
 .DS_Store
 Thumbs.db
+
+# Submodules
+stock-ai-tool/
+Minesweeper/
+Minesweeper.zip
+_test_*.py
