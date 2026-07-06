@@ -32,13 +32,13 @@ def get_name(code):
 
 # ── 获取K线数据 ──
 def get_kline(code):
+    """获取K线数据 - 腾讯API 精细分段 + 去重"""
     tc_code = tc(code)
     all_days = []
-    segments = [
-        ("1990-01-01", "2005-12-31"), ("2006-01-01", "2010-12-31"),
-        ("2011-01-01", "2015-12-31"), ("2016-01-01", "2020-12-31"),
-        ("2021-01-01", "2023-12-31"), ("2024-01-01", "2026-12-31"),
-    ]
+    # 每段最多返回约640条，用5年窗口精细分段
+    years = list(range(1990, 2030, 5))
+    segments = [(f"{y}-01-01", f"{y+4}-12-31") for y in years]
+    
     for ss, se in segments:
         try:
             r = requests.get(f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={tc_code},day,{ss},{se},2000,qfq",
@@ -46,23 +46,35 @@ def get_kline(code):
             days = r.json().get("data", {}).get(tc_code, {}).get("qfqday", [])
             if days: all_days.extend(days)
         except: pass
-        time.sleep(0.3)
+        time.sleep(0.2)
+    
     if not all_days:
         try:
             r = requests.get(f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={tc_code},day,,,3000,qfq",
                              headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
             all_days = r.json().get("data", {}).get(tc_code, {}).get("qfqday", [])
         except: pass
-    seen = set(); unique = []
-    for day in all_days:
-        if day[0] not in seen: seen.add(day[0]); unique.append(day)
-    unique.sort(key=lambda x: x[0])
-    if not unique: return None
-    return {"dates": [d[0] for d in unique], "opens": [float(d[1]) for d in unique],
-            "closes": [float(d[2]) for d in unique], "highs": [float(d[3]) for d in unique],
-            "lows": [float(d[4]) for d in unique], "volumes": [float(d[5]) for d in unique],
-            "n": len(unique)}
 
+    # 去重（按日期）
+    seen = set()
+    unique = []
+    for day in all_days:
+        if day[0] not in seen:
+            seen.add(day[0])
+            unique.append(day)
+    unique.sort(key=lambda x: x[0])
+    
+    if not unique: return None
+    
+    dates = [d[0] for d in unique]
+    opens = [float(d[1]) for d in unique]
+    closes = [float(d[2]) for d in unique]
+    highs = [float(d[3]) for d in unique]
+    lows = [float(d[4]) for d in unique]
+    volumes = [float(d[5]) for d in unique]
+    
+    return {"dates": dates, "opens": opens, "highs": highs, "lows": lows,
+            "closes": closes, "volumes": volumes, "n": len(unique)}
 # ── 获取公司详细信息 (F10) ──
 def get_company_info(code):
     try:
