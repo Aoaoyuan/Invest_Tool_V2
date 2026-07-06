@@ -229,15 +229,15 @@ def gen_chart(secid, name, kd, evts, info):
 
     fig.add_trace(go.Scatter(x=do, y=c, mode="lines", name="收盘价(前复权)", line=dict(color="#00e5ff",width=1.5), hovertemplate="%{x|%Y-%m-%d}<br>收盘价:¥%{y:.2f}"), row=1, col=1)
     for mc,mn,mn_ in [("#ffd740","MA20",20),("#ff9100","MA60",60),("#ff4081","MA250",250)]:
-        fig.add_trace(go.Scatter(x=do, y=df[f"MA{mn_}"].tolist(), mode="lines", name=mn, line=dict(color=mc,width=1,dash="dot"), hovertemplate=f"%{{x|%Y-%m-%d}}<br>{mn}:¥%{{y:.2f}}"), row=1, col=1)
+        fig.add_trace(go.Scatter(x=do, y=[None if pd.isna(v) else v for v in df[f"MA{mn_}"].tolist()], mode="lines", name=mn, line=dict(color=mc,width=1,dash="dot"), connectgaps=False, hovertemplate=f"%{{x|%Y-%m-%d}}<br>{mn}:¥%{{y:.2f}}"), row=1, col=1)
     fig.add_trace(go.Scatter(x=do, y=c, mode="lines", fill="tozeroy", line=dict(width=0), fillcolor="rgba(0,229,255,0.06)", showlegend=False), row=1, col=1)
 
-    mx = max(c)*1.12
+    mx = max(c)*1.15
     for i in range(len(ed)):
         col = tc_map.get(etp[i], "#9e9e9e"); sz = el[i]+3
         fig.add_trace(go.Scatter(x=[ed[i]], y=[mx], mode="markers+text", text=[et[i]], textposition="top center",
             marker=dict(symbol="triangle-down",size=sz,color=col),
-            textfont=dict(size=min(sz+3,14),color=col), showlegend=False,
+            textfont=dict(size=min(sz+6,16),color=col), showlegend=False,
             hovertemplate=f"<b>{et[i]}</b><br>{ede[i]}<br>%{{x|%Y-%m-%d}}<extra></extra>"), row=1, col=1)
         if el[i] >= 4: fig.add_vline(x=ed[i], line_width=1, line_dash="dash", line_color=col, opacity=0.25)
 
@@ -364,6 +364,7 @@ var h="<div class=it><b>"+d.n+"</b>("+d.c+")</div>"
 h+="<div class=it>K:"+d.k+"条</div><div class=it>"+d.s+"~"+d.e2+"</div>"
 h+="<div class=it>最高:"+d.h+"</div><div class=it>最低:"+d.l+"</div><div class=it>大事记:"+d.ev+"条</div>"
 if(d.hy){h="<div class=it><b>"+d.n+"</b>("+d.c+")</div><div class=it>行业:"+d.hy+"</div><div class=it>董事长:"+d.zjl+"</div>"+h.substring(h.indexOf('<div class=it>K:'))}
+if(d.intro && d.intro.length>5){document.getElementById("ib").innerHTML+="<div class=it style=width:100%>简介:"+d.intro+"</div>"}
 document.getElementById("ib").innerHTML=h
 document.getElementById("chart-frame").src="/chart/"+d.f
 document.getElementById("result").style.display="block"
